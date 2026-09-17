@@ -62,7 +62,12 @@ export default async function HomePage() {
           Los Guanachapines
         </h1>
         <p style={{ margin: 0, color: "#8a6f76", lineHeight: 1.5 }}>
-          Sesion iniciada como {displayName}
+          Sesión iniciada como {displayName}
+        </p>
+        <p style={{ marginTop: 16 }}>
+          <a href="/productos" style={{ color: "#9b4a62" }}>
+            Productos
+          </a>
         </p>
         <LogoutButton />
       </section>
