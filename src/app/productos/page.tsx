@@ -9,12 +9,14 @@ type Product = {
   name: string;
   sale_price: number;
   is_active: boolean;
+  stock_qty: number;
 };
 
 export default function ProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [name, setName] = useState("");
   const [price, setPrice] = useState("");
+  const [stock, setStock] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const [isSaving, setIsSaving] = useState(false);
 
@@ -22,7 +24,7 @@ export default function ProductsPage() {
     const supabase = createClient();
     const { data, error } = await supabase
       .from("products")
-      .select("id, name, sale_price, is_active")
+      .select("id, name, sale_price, stock_qty, is_active")
       .order("name");
 
     if (error) {
@@ -43,8 +45,16 @@ export default function ProductsPage() {
     setIsSaving(true);
 
     const parsedPrice = Number(price.replace(",", "."));
+    const parsedStock = stock.trim() === "" ? 0 : Number(stock.replace(",", "."));
+
     if (!name.trim() || Number.isNaN(parsedPrice) || parsedPrice < 0) {
       setErrorMessage("Escribe un nombre y un precio válido.");
+      setIsSaving(false);
+      return;
+    }
+
+    if (Number.isNaN(parsedStock) || parsedStock < 0) {
+      setErrorMessage("El stock no es válido.");
       setIsSaving(false);
       return;
     }
@@ -53,6 +63,7 @@ export default function ProductsPage() {
     const { error } = await supabase.from("products").insert({
       name: name.trim(),
       sale_price: parsedPrice,
+      stock_qty: parsedStock,
     });
 
     setIsSaving(false);
@@ -64,6 +75,7 @@ export default function ProductsPage() {
 
     setName("");
     setPrice("");
+    setStock("");
     loadProducts();
   }
 
@@ -147,6 +159,19 @@ export default function ProductsPage() {
             borderRadius: 8,
           }}
         />
+        <input
+          placeholder="Stock inicial"
+          value={stock}
+          onChange={(event) => setStock(event.target.value)}
+          style={{
+            width: "100%",
+            boxSizing: "border-box",
+            marginBottom: 8,
+            padding: "10px 12px",
+            border: "1px solid #eed6dc",
+            borderRadius: 8,
+          }}
+        />
         {errorMessage ? (
           <p style={{ color: "#b42318" }}>{errorMessage}</p>
         ) : null}
@@ -180,7 +205,9 @@ export default function ProductsPage() {
               opacity: product.is_active ? 1 : 0.5,
             }}
           >
-            <span>{product.name}</span>
+            <span>
+              {product.name} ({Number(product.stock_qty)} disp.)
+            </span>
             <input
               defaultValue={Number(product.sale_price).toFixed(2)}
               onBlur={(event) => handlePriceBlur(product, event.target.value)}
