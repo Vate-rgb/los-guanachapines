@@ -12,6 +12,14 @@ export default async function HomePage() {
     redirect("/login");
   }
 
+  const { data: profile } = await supabase
+    .from("users")
+    .select("username, full_name")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  const displayName = profile?.username ?? user.email;
+
   return (
     <main
       style={{
@@ -54,7 +62,7 @@ export default async function HomePage() {
           Los Guanachapines
         </h1>
         <p style={{ margin: 0, color: "#8a6f76", lineHeight: 1.5 }}>
-          Sesion iniciada como {user.email}
+          Sesion iniciada como {displayName}
         </p>
         <LogoutButton />
       </section>
