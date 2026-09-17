@@ -44,7 +44,7 @@ export default function ProductsPage() {
 
     const parsedPrice = Number(price.replace(",", "."));
     if (!name.trim() || Number.isNaN(parsedPrice) || parsedPrice < 0) {
-      setErrorMessage("Escribe un nombre y un precio valido.");
+      setErrorMessage("Escribe un nombre y un precio válido.");
       setIsSaving(false);
       return;
     }
@@ -64,6 +64,50 @@ export default function ProductsPage() {
 
     setName("");
     setPrice("");
+    loadProducts();
+  }
+
+  async function handlePriceBlur(product: Product, rawValue: string) {
+    const parsedPrice = Number(rawValue.replace(",", "."));
+    if (Number.isNaN(parsedPrice) || parsedPrice < 0) {
+      setErrorMessage("Precio no válido.");
+      return;
+    }
+
+    if (parsedPrice === Number(product.sale_price)) {
+      return;
+    }
+
+    const supabase = createClient();
+    const { error } = await supabase
+      .from("products")
+      .update({ sale_price: parsedPrice, updated_at: new Date().toISOString() })
+      .eq("id", product.id);
+
+    if (error) {
+      setErrorMessage("No se pudo actualizar el precio.");
+      return;
+    }
+
+    setErrorMessage("");
+    loadProducts();
+  }
+
+  async function handleToggleActive(product: Product) {
+    const supabase = createClient();
+    const { error } = await supabase
+      .from("products")
+      .update({
+        is_active: !product.is_active,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", product.id);
+
+    if (error) {
+      setErrorMessage("No se pudo cambiar el estado.");
+      return;
+    }
+
     loadProducts();
   }
 
@@ -122,19 +166,45 @@ export default function ProductsPage() {
         </button>
       </form>
 
-      <ul style={{ listStyle: "none", padding: 0 }}>
+      <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
         {products.map((product) => (
           <li
             key={product.id}
             style={{
-              display: "flex",
-              justifyContent: "space-between",
+              display: "grid",
+              gridTemplateColumns: "1fr 90px auto",
+              gap: 8,
+              alignItems: "center",
               padding: "12px 0",
               borderBottom: "1px solid #eed6dc",
+              opacity: product.is_active ? 1 : 0.5,
             }}
           >
             <span>{product.name}</span>
-            <span>Q{Number(product.sale_price).toFixed(2)}</span>
+            <input
+              defaultValue={Number(product.sale_price).toFixed(2)}
+              onBlur={(event) => handlePriceBlur(product, event.target.value)}
+              style={{
+                width: "100%",
+                boxSizing: "border-box",
+                padding: "6px 8px",
+                border: "1px solid #eed6dc",
+                borderRadius: 8,
+              }}
+            />
+            <button
+              type="button"
+              onClick={() => handleToggleActive(product)}
+              style={{
+                padding: "6px 10px",
+                border: "1px solid #eed6dc",
+                borderRadius: 8,
+                background: "#fff",
+                cursor: "pointer",
+              }}
+            >
+              {product.is_active ? "Desactivar" : "Activar"}
+            </button>
           </li>
         ))}
       </ul>
